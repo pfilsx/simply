@@ -20,12 +20,10 @@
     "issues": "https://github.com/pfilsx/simply/issues"
   },
   "require": {
-    "php": ">=5.1.0"
+    "php": ">=5.6.0"
   },
   "autoload": {
-    "classmap": [
-      "src/Simply.php"
-    ]
+    "psr-4": {"pfilsx\\simply\\": "src/"}
   },
   "extra": {
     "branch-alias": {
