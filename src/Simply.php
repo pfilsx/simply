@@ -1,5 +1,10 @@
 <?php
 
+
+namespace pfilsx\simply;
+use Exception;
+use ParseError;
+
 /**
  * Package Simply
  */
@@ -12,14 +17,14 @@ class Simply
     /**
      * @var array
      */
-    protected $globalVariables = array();
+    protected $globalVariables = [];
 
     /**
      * Simply constructor.
      * @param array $config
      * @throws Exception
      */
-    public function __construct($config = array())
+    public function __construct($config = [])
     {
         if (is_array($config) && !empty($config)){
             foreach ($config as $name => $value){
@@ -56,7 +61,7 @@ class Simply
      * @return string - результат компиляции шаблона
      * @throws Exception
      */
-    public function render($viewName, $params = array()){
+    public function render($viewName, $params = []){
         $fileName = $this->normalizePath($this->templatesDirectory.DIRECTORY_SEPARATOR.ltrim($viewName, '\\/'));
         if (substr($fileName, -4) != '.php'){
             $fileName = $fileName.'.php';
@@ -73,7 +78,7 @@ class Simply
      * @param array $params
      * @throws Exception
      */
-    public function display($viewName, $params = array()){
+    public function display($viewName, $params = []){
         echo $this->render($viewName, $params);
     }
 
@@ -84,7 +89,7 @@ class Simply
      * @return string
      * @throws Exception
      */
-    public function renderString($content, $params = array()){
+    public function renderString($content, $params = []){
         $obInitialLevel = ob_get_level();
         $params = array_merge($this->globalVariables, $params);
         ob_start();
@@ -129,7 +134,7 @@ class Simply
      * @param array $params
      * @throws Exception
      */
-    public function displayString($content, $params = array()){
+    public function displayString($content, $params = []){
         echo $this->renderString($content, $params);
     }
 
@@ -149,7 +154,7 @@ class Simply
      * @return string
      * @throws Exception
      */
-    protected function renderFile($file, $params = array()){
+    protected function renderFile($file, $params = []){
         $obInitialLevel = ob_get_level();
         $params = array_merge($this->globalVariables, $params);
         $params['_renderedFile'] = $file;
@@ -184,9 +189,9 @@ class Simply
             return $path;
         }
         if (strpos($path, "{$ds}{$ds}") === 0 && $ds == '\\') {
-            $parts = array($ds);
+            $parts = [$ds];
         } else {
-            $parts = array();
+            $parts = [];
         }
         foreach (explode($ds, $path) as $part) {
             if ($part === '..' && !empty($parts) && end($parts) !== '..') {
