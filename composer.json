@@ -1,0 +1,35 @@
+{
+  "name": "pfilsx/simply",
+  "description": "Simple flexible PHP template engine.",
+  "type": "extension",
+  "keywords": [
+    "template engine",
+    "php"
+  ],
+  "homepage": "https://github.com/pfilsx/simply",
+  "license": "GPLv2",
+  "authors": [
+    {
+      "name": "Pavel Filimonov",
+      "email": "pfilsx@gmail.com",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "source": "https://github.com/pfilsx/simply",
+    "issues": "https://github.com/pfilsx/simply/issues"
+  },
+  "require": {
+    "php": ">=5.1.0"
+  },
+  "autoload": {
+    "classmap": [
+      "src/Simply.php"
+    ]
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "1.0-dev"
+    }
+  }
+}
