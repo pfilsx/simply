@@ -1,5 +1,3 @@
-<?php ?>
-
 <head>
-    <title><?= $this->title ?></title>
+    <title><?= $title ?></title>
 </head>

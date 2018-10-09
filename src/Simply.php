@@ -11,13 +11,22 @@ use ParseError;
 class Simply
 {
     /**
+     * Path to directory with templates
      * @var string
      */
     protected $templatesDirectory = 'views';
     /**
+     * Global variables array passed to all templates
      * @var array
      */
     protected $globalVariables = [];
+
+    /**
+     * Path to layout file(without .php)
+     * Layout file must be in templates directory, path will be generated as $templatesDirectory.$layout
+     * @var null|string
+     */
+    protected $layout = null;
 
     /**
      * Simply constructor.
@@ -26,56 +35,73 @@ class Simply
      */
     public function __construct($config = [])
     {
-        if (is_array($config) && !empty($config)){
-            foreach ($config as $name => $value){
-                $this->$name = $value;
-            }
-        }
+        $this->loadConfig($config);
         $this->templatesDirectory = $this->normalizePath($this->templatesDirectory);
         if (!is_dir($this->templatesDirectory)){
-            throw new Exception("Указана несуществующая директория для шаблонов: '{$this->templatesDirectory}'");
+            throw new Exception("Templates directory does not exist: '{$this->templatesDirectory}'");
+        }
+        if (!empty($this->layout)){
+            $this->layout = $this->templatesDirectory.DIRECTORY_SEPARATOR.ltrim($this->layout, '/\\');
+            if (substr($this->layout, -4) != '.php'){
+                $this->layout .= '.php';
+            }
+            if (!is_file($this->layout)){
+                throw new Exception("Layout file does not exist: '{$this->layout}'");
+            }
         }
         $this->init();
     }
 
     /**
-     * Используйте данный метод, если вам нужно выполнить какие-либо действия после инициализации объекта класса
+     * Loads configuration
+     * @param $config
+     */
+    protected function loadConfig($config){
+        if (is_array($config) && !empty($config)){
+            foreach ($config as $name => $value){
+                if (property_exists($this, $name)){
+                    $this->$name = $value;
+                }
+            }
+        }
+    }
+
+    /**
+     * Use this if you need to do some actions after construct
      */
     protected function init(){
 
     }
 
     /**
-     * Добавление переменной к глобальному массиву переменных
-     * @param $name
-     * @param $value
+     * Adds variable to a global variables array
+     * @param $name - variable name
+     * @param $value - variable value
+     * @see $globalVariables
      */
     public function assign($name, $value){
         $this->globalVariables[$name] = $value;
     }
 
     /**
-     * Компиляция шаблона из файла
-     * @param $viewName - имя шаблона относительно базовой директории шаблонов
-     * @param array $params - параметры для передачи в шаблон
-     * @return string - результат компиляции шаблона
+     * Renders view file
+     * @param $viewName - view path from $templatesDirectory
+     * @param array $params - params
+     * @return string - render result
      * @throws Exception
      */
     public function render($viewName, $params = []){
-        $fileName = $this->normalizePath($this->templatesDirectory.DIRECTORY_SEPARATOR.ltrim($viewName, '\\/'));
-        if (substr($fileName, -4) != '.php'){
-            $fileName = $fileName.'.php';
+        $content = $this->renderPartial($viewName, $params);
+        if (empty($this->layout)){
+            return $content;
         }
-        if (!is_file($fileName)){
-            throw new Exception("Не найден файл шаблона: {$fileName}");
-        }
-        return $this->renderFile($fileName, $params);
+        return $this->renderLayout($content, $params);
     }
 
     /**
-     * Рендеринг шаблона из файла
-     * @param $viewName
-     * @param array $params
+     * Displays view file
+     * @param $viewName - view path from $templatesDirectory
+     * @param array $params - params
      * @throws Exception
      */
     public function display($viewName, $params = []){
@@ -83,13 +109,64 @@ class Simply
     }
 
     /**
-     * Компиляция шаблона из строки(не рекомендуется к использованию по причинам безопасности)
-     * @param $content
+     * Renders view file without layout
+     * @param $viewName - view path from $templatesDirectory
+     * @param array $params - params
+     * @return string - render result
+     * @throws Exception
+     */
+    public function renderPartial($viewName, $params = []){
+        $fileName = $this->normalizePath($this->templatesDirectory.DIRECTORY_SEPARATOR.ltrim($viewName, '\\/'));
+        if (substr($fileName, -4) != '.php'){
+            $fileName = $fileName.'.php';
+        }
+        if (!is_file($fileName)){
+            throw new Exception("View file does not exist: {$fileName}");
+        }
+        return $this->renderFile($fileName, $params);
+    }
+    /**
+     * Рендеринг шаблона из файла
+     * @param $viewName
      * @param array $params
-     * @return string
+     * @throws Exception
+     * @see renderPartial()
+     */
+    public function displayPartial($viewName, $params = []){
+        echo $this->renderPartial($viewName, $params);
+    }
+    /**
+     * Renders view from string(not recommended cause by security reasons)
+     * @param $content - string representation of view
+     * @param array $params - params
+     * @return string - render result
      * @throws Exception
      */
     public function renderString($content, $params = []){
+        $content = $this->renderStringPartial($content, $params);
+        if (empty($this->layout)){
+            return $content;
+        }
+        return $this->renderLayout($content, $params);
+    }
+    /**
+     * Displays view from string without layout(not recommended cause by security reasons)
+     * @param $content - string representation of view
+     * @param array $params - params
+     * @throws Exception
+     */
+    public function displayString($content, $params){
+        echo $this->renderString($content, $params);
+    }
+
+    /**
+     * Renders view from string without layout(not recommended cause by security reasons)
+     * @param $content - string representation of view
+     * @param array $params - params
+     * @return string - render result
+     * @throws Exception
+     */
+    public function renderStringPartial($content, $params = []){
         $obInitialLevel = ob_get_level();
         $params = array_merge($this->globalVariables, $params);
         ob_start();
@@ -129,17 +206,17 @@ class Simply
     }
 
     /**
-     * Рендеринг шаблона из строки(не рекомендуется к использованию по причинам безопасности)
-     * @param $content
-     * @param array $params
+     * Displays view from string without layout(not recommended cause by security reasons)
+     * @param $content - string representation of view
+     * @param array $params - params
      * @throws Exception
      */
-    public function displayString($content, $params = []){
-        echo $this->renderString($content, $params);
+    public function displayStringPartial($content, $params = []){
+        echo $this->renderStringPartial($content, $params);
     }
 
     /**
-     * Эскейп html символов
+     * Encodes string
      * @param $content
      * @param bool $doubleEncode
      * @return string
@@ -149,15 +226,30 @@ class Simply
     }
 
     /**
-     * @param $file
-     * @param array $params
-     * @return string
+     * Renders layout file
+     * @param $content - view content
+     * @param $params - params
+     * @return string - render result
+     * @throws Exception
+     */
+    protected function renderLayout($content, $params){
+        return $this->renderFile($this->layout, array_merge(
+            $params, ['_content_' => $content]
+        ));
+    }
+
+    /**
+     * Renders php file
+     * @param $file - path to file
+     * @param array $params - params
+     * @return string - render result
      * @throws Exception
      */
     protected function renderFile($file, $params = []){
         $obInitialLevel = ob_get_level();
         $params = array_merge($this->globalVariables, $params);
         $params['_renderedFile'] = $file;
+        $params['_layout'] = $this->layout;
         ob_start();
         ob_implicit_flush(false);
         extract($params, EXTR_OVERWRITE);
@@ -176,10 +268,9 @@ class Simply
     }
 
     /**
-     * Приведение пути к нормализованному виду
-     * @param $path - путь
-     * @param string $ds - разделитель
-     * @return string
+     * @param $path - path
+     * @param string $ds - separator
+     * @return string - normalized path
      */
     protected function normalizePath($path, $ds = DIRECTORY_SEPARATOR)
     {

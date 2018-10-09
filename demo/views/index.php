@@ -1,10 +1,5 @@
-<?php
-
-$this->title = 'Basic template test';
-
-?>
 <html>
-    <?= $this->render('header') ?>
+    <?= $this->render('header', ['title' => 'Basic template']) ?>
     <body>
         <h1><?= $title ?></h1>
         <p>Basic template test rendered from file: <?= $_renderedFile ?></p>
