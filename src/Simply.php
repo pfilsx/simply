@@ -1,10 +1,6 @@
 <?php
 
 
-namespace pfilsx\simply;
-use Exception;
-use ParseError;
-
 /**
  * Package Simply
  */
@@ -19,7 +15,7 @@ class Simply
      * Global variables array passed to all templates
      * @var array
      */
-    protected $globalVariables = [];
+    protected $globalVariables = array();
 
     /**
      * Path to layout file(without .php)
@@ -33,12 +29,12 @@ class Simply
      * @param array $config
      * @throws Exception
      */
-    public function __construct($config = [])
+    public function __construct($config = array())
     {
         $this->loadConfig($config);
         $this->templatesDirectory = $this->normalizePath($this->templatesDirectory);
         if (!is_dir($this->templatesDirectory)){
-            throw new Exception("Templates directory does not exist: '{$this->templatesDirectory}'");
+            throw new \Exception("Templates directory does not exist: '{$this->templatesDirectory}'");
         }
         if (!empty($this->layout)){
             $this->layout = $this->templatesDirectory.DIRECTORY_SEPARATOR.ltrim($this->layout, '/\\');
@@ -46,7 +42,7 @@ class Simply
                 $this->layout .= '.php';
             }
             if (!is_file($this->layout)){
-                throw new Exception("Layout file does not exist: '{$this->layout}'");
+                throw new \Exception("Layout file does not exist: '{$this->layout}'");
             }
         }
         $this->init();
@@ -90,7 +86,7 @@ class Simply
      * @return string - render result
      * @throws Exception
      */
-    public function render($viewName, $params = []){
+    public function render($viewName, $params = array()){
         $content = $this->renderPartial($viewName, $params);
         if (empty($this->layout)){
             return $content;
@@ -104,7 +100,7 @@ class Simply
      * @param array $params - params
      * @throws Exception
      */
-    public function display($viewName, $params = []){
+    public function display($viewName, $params = array()){
         echo $this->render($viewName, $params);
     }
 
@@ -115,13 +111,13 @@ class Simply
      * @return string - render result
      * @throws Exception
      */
-    public function renderPartial($viewName, $params = []){
+    public function renderPartial($viewName, $params = array()){
         $fileName = $this->normalizePath($this->templatesDirectory.DIRECTORY_SEPARATOR.ltrim($viewName, '\\/'));
         if (substr($fileName, -4) != '.php'){
             $fileName = $fileName.'.php';
         }
         if (!is_file($fileName)){
-            throw new Exception("View file does not exist: {$fileName}");
+            throw new \Exception("View file does not exist: {$fileName}");
         }
         return $this->renderFile($fileName, $params);
     }
@@ -132,7 +128,7 @@ class Simply
      * @throws Exception
      * @see renderPartial()
      */
-    public function displayPartial($viewName, $params = []){
+    public function displayPartial($viewName, $params = array()){
         echo $this->renderPartial($viewName, $params);
     }
     /**
@@ -142,7 +138,7 @@ class Simply
      * @return string - render result
      * @throws Exception
      */
-    public function renderString($content, $params = []){
+    public function renderString($content, $params = array()){
         $content = $this->renderStringPartial($content, $params);
         if (empty($this->layout)){
             return $content;
@@ -155,7 +151,7 @@ class Simply
      * @param array $params - params
      * @throws Exception
      */
-    public function displayString($content, $params){
+    public function displayString($content, $params = array()){
         echo $this->renderString($content, $params);
     }
 
@@ -166,43 +162,22 @@ class Simply
      * @return string - render result
      * @throws Exception
      */
-    public function renderStringPartial($content, $params = []){
+    public function renderStringPartial($content, $params = array()){
         $obInitialLevel = ob_get_level();
         $params = array_merge($this->globalVariables, $params);
         ob_start();
         ob_implicit_flush(false);
         extract($params, EXTR_OVERWRITE);
-
-        $phpVer = (int)(substr(phpversion(),0,1));
-        if ($phpVer >= 7)
-        {
-            try {
-                eval("?> $content");
-                return ob_get_clean();
-            }
-            catch (ParseError $ex){
-                while (ob_get_level() > $obInitialLevel) {
-                    if (!@ob_end_clean()) {
-                        ob_clean();
-                    }
+        $result = @eval("?> $content");
+        if ($result === false){
+            while (ob_get_level() > $obInitialLevel) {
+                if (!@ob_end_clean()) {
+                    ob_clean();
                 }
-                throw new Exception($ex->getMessage());
             }
-            catch (Exception $ex){
-                while (ob_get_level() > $obInitialLevel) {
-                    if (!@ob_end_clean()) {
-                        ob_clean();
-                    }
-                }
-                throw $ex;
-            }
-        } else {
-            $result = @eval("?> $content");
-            if ($result === false){
-                throw new Exception('Ошибка в синтаксисе шаблона');
-            }
-            return ob_get_clean();
+            throw new \Exception('Ошибка в синтаксисе шаблона');
         }
+        return ob_get_clean();
     }
 
     /**
@@ -211,7 +186,7 @@ class Simply
      * @param array $params - params
      * @throws Exception
      */
-    public function displayStringPartial($content, $params = []){
+    public function displayStringPartial($content, $params = array()){
         echo $this->renderStringPartial($content, $params);
     }
 
@@ -234,7 +209,7 @@ class Simply
      */
     protected function renderLayout($content, $params){
         return $this->renderFile($this->layout, array_merge(
-            $params, ['_content_' => $content]
+            $params, array('_content_' => $content)
         ));
     }
 
@@ -245,7 +220,7 @@ class Simply
      * @return string - render result
      * @throws Exception
      */
-    protected function renderFile($file, $params = []){
+    protected function renderFile($file, $params = array()){
         $obInitialLevel = ob_get_level();
         $params = array_merge($this->globalVariables, $params);
         $params['_renderedFile'] = $file;
@@ -257,7 +232,7 @@ class Simply
             require $file;
             return ob_get_clean();
         }
-        catch (Exception $ex){
+        catch (\Exception $ex){
             while (ob_get_level() > $obInitialLevel) {
                 if (!@ob_end_clean()) {
                     ob_clean();
@@ -280,9 +255,9 @@ class Simply
             return $path;
         }
         if (strpos($path, "{$ds}{$ds}") === 0 && $ds == '\\') {
-            $parts = [$ds];
+            $parts = array($ds);
         } else {
-            $parts = [];
+            $parts = array();
         }
         foreach (explode($ds, $path) as $part) {
             if ($part === '..' && !empty($parts) && end($parts) !== '..') {
