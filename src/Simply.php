@@ -155,7 +155,7 @@ class Simply
      * @param array $params - params
      * @throws Exception
      */
-    public function displayString($content, $params){
+    public function displayString($content, $params = []){
         echo $this->renderString($content, $params);
     }
 
@@ -199,7 +199,12 @@ class Simply
         } else {
             $result = @eval("?> $content");
             if ($result === false){
-                throw new Exception('Ошибка в синтаксисе шаблона');
+                while (ob_get_level() > $obInitialLevel) {
+                    if (!@ob_end_clean()) {
+                        ob_clean();
+                    }
+                }
+                throw new Exception('Exception in view syntax');
             }
             return ob_get_clean();
         }
