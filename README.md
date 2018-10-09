@@ -19,15 +19,17 @@ Configuration
 -----
 You can use next settings:
 1. `templatesDirectory` - path to your templates directory(default: `'views'`)
-2. `globalVariables` - array with global variables for yours templates(optional, default: empty array. Can be extended by `$simply->assign()`)
+2. `globalVariables` - array with global variables for yours templates(optional, default: `[]`. Can be extended by `$simply->assign()`)
+3. `layout` - path to your layout from templates directory(optional, default: `null`)
 
 Usage
 -----
 ```php
-$simply = new Simply(array('templatesDirectory' => 'templates'));
-$simply->assign('title', 'Заголовок'); // добавление глобальной переменной
-$simply->display('index', array('text' => 'Текст')); // отображение 
+$simply = new Simply(array('templatesDirectory' => 'templates', 'layout' => 'main'));
+$simply->assign('title', 'Заголовок'); // add global variable
+$simply->display('index', array('text' => 'Текст')); // display 
 ```
+See [demo](https://github.com/pfilsx/simply/tree/master/demo) directory.
 
 Methods
 -----
