@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/../src/Simply.php';
+require_once __DIR__.'/../src/Html.php';
 
 $simply = new \pfilsx\simply\Simply(['layout' => 'layout/layout']);
 
