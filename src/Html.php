@@ -6,6 +6,8 @@ namespace pfilsx\simply;
 
 class Html
 {
+    protected static $counter = 0;
+
 
     public static function a($content, $link, $attributes = []){
         return static::tag('a', $content, array_merge($attributes, [
@@ -41,6 +43,14 @@ class Html
         ]));
     }
 
+    public static function hiddenInput($name, $value = null, $attributes = []){
+        return static::tag('input', null, array_merge($attributes, [
+            'type' => 'hidden',
+            'name' => $name,
+            'value' => $value
+        ]));
+    }
+
     public static function passwordInput($name, $value = null, $attributes = []){
         return static::tag('input', null, array_merge($attributes, [
             'type' => 'password',
@@ -57,28 +67,27 @@ class Html
         ]));
     }
 
-    public static function checkbox($name, $label, $value = null, $attributes = []){
+    public static function checkbox($name, $label, $isChecked = false, $attributes = []){
         $labelAttributes = [];
         if (array_key_exists('labelAttributes',$attributes)){
             $labelAttributes = (array)$attributes['labelAttributes'];
         }
-        return static::label(static::tag('input', null, array_merge($attributes, [
+        $hiddenId = 'cp'.static::$counter++;
+        $hidden = static::hiddenInput($name, $isChecked == true ? 1 : 0, [
+            'id' => $hiddenId
+        ]);
+        $onClickEvent = "document.getElementById('$hiddenId').value=this.checked?1:0;";
+        if (array_key_exists('onclick', $attributes)){
+            $onClickEvent .= ' '.$attributes['onclick'];
+            unset($attributes['onclick']);
+        }
+
+        return $hidden.static::label(static::tag('input', null, array_merge($attributes, [
             'type' => 'checkbox',
-            'name' => $name,
-            'checked' => $value == true
+            'checked' => $isChecked == true,
+            'onclick' => $onClickEvent
+
         ])).$label, $labelAttributes);
-    }
-
-    public static function checkboxList($name, $items, $values = [], $attributes = []){
-        if ((function_exists('mb_substr') && mb_substr($name, -2) != '[]') || (!function_exists('mb_substr') && substr($name, -2) != '[]')){
-            $name .= '[]';
-        }
-        $inputs = [];
-        foreach ($items as $key => $value){
-            $inputs[] = static::checkbox($name, $value, is_array($values) && in_array($key, $values), $attributes);
-        }
-        return implode(PHP_EOL, $inputs);
-
     }
 
     public static function radio($name, $label, $value = null, $attributes = []){
